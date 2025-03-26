@@ -286,8 +286,7 @@ class NUMPYIEKF:
         # H[:, 9:12] = H_t_c_i[1:]
         # H[:, 18:21] = H_i_bias[1:]
 
-        # R = np.diag(measurement_cov)
-        R = np.eye(3)
+        R = np.diag(measurement_cov)
         H, a_car_y = self.custom_jacobian(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, u[:3], u[3:])
         r = np.concatenate((-v_body[1:], -a_car_y), axis=0)
 
