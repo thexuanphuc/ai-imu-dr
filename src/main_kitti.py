@@ -462,7 +462,7 @@ class KITTIArgs():
         path_results = "../results"
         path_temp = "../temp"
 
-        epochs = 400
+        epochs = 10
         seq_dim = 6000
 
         # training, cross-validation and test dataset
@@ -472,15 +472,15 @@ class KITTIArgs():
 
         # choose what to do
 
-        read_data = 0 # test
-        train_filter = 0
-        test_filter = 1
-        results_filter = 1
+        # read_data = 0 # test
+        # train_filter = 0
+        # test_filter = 1
+        # results_filter = 1
 
-        # read_data = 1 # train
-        # train_filter = 1
-        # test_filter = 0
-        # results_filter = 0
+        read_data = 1 # train
+        train_filter = 1
+        test_filter = 0
+        results_filter = 0
         
 
         dataset_class = KITTIDataset

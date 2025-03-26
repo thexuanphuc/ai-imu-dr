@@ -24,6 +24,7 @@ class NUMPYIEKF:
         self.cov_t_c_i = None
         self.cov_lat = None
         self.cov_up = None
+        self.acc = None
         self.cov_b_omega0 = None
         self.cov_b_acc0 = None
         self.cov_Rot0 = None
@@ -73,6 +74,7 @@ class NUMPYIEKF:
         """Zero lateral velocity covariance"""
         cov_up = 300
         """Zero lateral velocity covariance"""
+        acc = 0.8
 
         cov_Rot0 = 1e-3
         """initial pitch and roll covariance"""
