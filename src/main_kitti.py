@@ -438,8 +438,10 @@ def test_filter(args, dataset):
                                                        to_numpy=True)
         N = None
         u_t = torch.from_numpy(u).double()
-        measurements_covs = torch_iekf.forward_nets(u_t)
-        measurements_covs = measurements_covs.detach().numpy()
+        measurements_covs_old = torch_iekf.forward_nets(u_t)
+        measurements_covs_old = measurements_covs_old.detach().numpy()
+        one_array = 0.1 * np.ones((len(measurements_covs_old), 1))
+        measurements_covs = np.hstack((measurements_covs_old, one_array))
         start_time = time.time()
         Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(t, u, measurements_covs,
                                                                    v_gt, p_gt, N,
