@@ -388,7 +388,7 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
         ], dim=1)
 
         obs_new = a_car[1] - v_c[0] * omega_car[2]
-        return torch.cat([J_old, J_new], dim=0), obs_new
+        return torch.cat([J_old, J_new], dim=0).detach(), obs_new.detach()
 
     def update(self, Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, u, i, measurement_cov):
         Omega = self.skew(u[:3] - b_omega)  # skew of angular velocity
