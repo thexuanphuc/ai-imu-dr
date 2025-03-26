@@ -442,6 +442,10 @@ def test_filter(args, dataset):
         measurements_covs_old = measurements_covs_old.detach().numpy()
         one_array = 0.1 * np.ones((len(measurements_covs_old), 1))
         measurements_covs = np.hstack((measurements_covs_old, one_array))
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         start_time = time.time()
         Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(t, u, measurements_covs,
                                                                    v_gt, p_gt, N,
