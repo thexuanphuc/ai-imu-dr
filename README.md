@@ -35,7 +35,18 @@ or with conda:
 conda env create -f environment.yml
 conda activate ai-imu
 ```
-    
+
+or with Docker:
+```
+docker build -t ai-imu .  
+docker run --gpus all -it -v ($pwd):/app/project--rm ai-imu:latest
+``` 
+
+inside container to activate env:
+```
+source /opt/conda/etc/profile.d/conda.sh
+conda activate ai-imu
+```
 4.  Clone this repo
 ```
 git clone https://github.com/mbrossar/ai-imu-dr.git
