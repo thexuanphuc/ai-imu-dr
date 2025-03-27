@@ -289,7 +289,7 @@ class NUMPYIEKF:
         # H[:, 18:21] = H_i_bias[1:]
 
         # R = np.diag(measurement_cov)
-        R = np.eye(3)
+        R = 0.5 * np.eye(3)
         H, a_car_y = self.custom_jacobian(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, u[:3], u[3:])
         r = np.concatenate((-v_body[1:], -a_car_y), axis=0)
 
@@ -362,6 +362,8 @@ class NUMPYIEKF:
                         [-axis[1], axis[0], 0]])
             s = np.sin(angle)
             c = np.cos(angle)
+
+            #  TODO check if these formula the same as 41, 42 in paper
             a_ = (1 - c) / angle
             b_ = (1 - s / angle)
             J = (s / angle) * NUMPYIEKF.Id3 + b_ * np.outer(axis, axis) + a_ * skew_axis
