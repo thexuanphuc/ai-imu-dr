@@ -21,6 +21,7 @@ weight_decay_mesnet = {'cov_net': 1e-8,
     'cov_lin': 1e-8,
     }
 
+device = 'cuda'
 
 def compute_delta_p(Rot, p):
     list_rpe = [[], [], []]  # [idx_0, idx_end, pose_delta_p]
@@ -85,6 +86,7 @@ def prepare_filter(args, dataset):
     iekf.train()
     # init u_loc and u_std
     iekf.get_normalize_u(dataset)
+    # iekf = iekf.to(device)
     return iekf
 
 
@@ -104,6 +106,7 @@ def prepare_loss_data(args, dataset):
     list_rpe = {}
     for dataset_name, Ns in dataset.datasets_train_filter.items():
         t, ang_gt, p_gt, v_gt, u = prepare_data(args, dataset, dataset_name, 0)
+        print(Ns[1])
         p_gt = p_gt.double()
         Rot_gt = torch.zeros(Ns[1], 3, 3)
         for k in range(Ns[1]):

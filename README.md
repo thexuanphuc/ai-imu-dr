@@ -1,14 +1,19 @@
-# AI-IMU Dead-Reckoning [[IEEE paper](https://ieeexplore.ieee.org/document/9035481), [ArXiv paper](https://arxiv.org/pdf/1904.06064.pdf)]
+# AI-IMU++ Dead-Reckoning [[IEEE paper](https://ieeexplore.ieee.org/document/9035481), [ArXiv paper](https://arxiv.org/pdf/1904.06064.pdf)]
 
-_1.10%_ translational error on the [KITTI](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) odometry sequences with __only__ an Inertial Measurement Unit.
+<!-- _1.10%_ translational error on the [KITTI](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) odometry sequences with __only__ an Inertial Measurement Unit.
 
-![Results on sequence 08](temp/08.gif)
+![Results on sequence 08](temp/08.gif) -->
 
 ## Overview
 
-In the context of intelligent vehicles, robust and accurate dead reckoning based on the Inertial Measurement Unit (IMU) may prove useful to correlate feeds from imaging sensors, to safely navigate through obstructions, or for safe emergency stop in the extreme case of other sensors failure.
+<small>🔹In the context of intelligent vehicles, robust and accurate dead reckoning based on the Inertial Measurement Unit (IMU) may prove useful to correlate feeds from imaging sensors, to safely navigate through obstructions, or for safe emergency stop in the extreme case of other sensors failure.</small>
 
-This repo contains the code of our novel accurate method for dead reckoning of wheeled vehicles based only on an IMU. The key components of the method are the Kalman filter and the use of deep neural networks to dynamically adapt the noise parameters of the filter. Our dead reckoning inertial method based only on the IMU accurately estimates 3D position, velocity, orientation of the vehicle and self-calibrates the IMU biases. We achieve on the KITTI odometry dataset on average a 1.10% translational error and the algorithm competes with top-ranked methods which, by contrast, use LiDAR or stereo vision.
+
+This the repo of the [Sk "Perception in robotics"](https://github.com/g-ferrer/perception-in-robotics-2025) project. Our goal was to improve filter performance adding new pseudo-measurement model. 
+
+You can inside the code you can find our "new" measurement function. For derivation and technical details check the paper.
+
+## Method
 
 ![Structure of the approach](temp/structure.jpg)
 
@@ -35,12 +40,24 @@ or with conda:
 conda env create -f environment.yml
 conda activate ai-imu
 ```
-    
+
+or with Docker:
+```
+docker build -t ai-imu .  
+docker run --gpus all -it -v ($pwd):/project --rm ai-imu
+``` 
+
+inside container to activate env:
+```
+source /opt/conda/etc/profile.d/conda.sh
+conda activate ai-imu
+```
 4.  Clone this repo
 ```
 git clone https://github.com/mbrossar/ai-imu-dr.git
 ```
 
+<span style="font-size: small; opacity: 0.8;">The origianal code contained error, for details check the paper</span>
 
 ### Testing
 1. Download reformated pickle format of the 00-11 KITTI IMU raw data at this [url](https://github.com/user-attachments/files/17930695/data.zip), extract and copy then in the `data` folder.
@@ -52,7 +69,7 @@ rm data.zip
 ```
 These file can alternatively be generated after download the KITTI raw data and setting `read_data = 1` in the `main.py` file.
 
-2. Download training parameters at this [url](https://www.dropbox.com/s/77kq4s7ziyvsrmi/temp.zip), extract and copy in the `temp` folder.
+2. Download training parameters at this [url](https://drive.google.com/file/d/10yHLJ8MNgufN8MrOZeku661EyP4M9orz/view?usp=sharing)(low number of epochs), extract and copy in the `temp` folder.
 ```
 wget "https://github.com/DragonEmperorG/ai-imu-dr/raw/refs/heads/master/temp/temp.zip"
 unzip temp.zip -d ai-imu-dr/temp
@@ -92,9 +109,22 @@ If you use this code in your research, please cite:
 }
 ```
 
-### Authors
+### Authors 
+Xuan Nguyen*
+
+Alymov Maksim*
+
+*Skolkovo Institute of Science and Technology
+
+### Authors of the origial method
 Martin Brossard*, Axel Barrau° and Silvère Bonnabel*
 
 *MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006 Paris, France
 
 °Safran Tech, Groupe Safran, Rue des Jeunes Bois-Châteaufort, 78772, Magny Les Hameaux Cedex, France
+
+
+### Steps to improve
+
+- [ ] To adapt code to train it on cuda device
+- [ ] To tune initial parameters of the new measurements model 

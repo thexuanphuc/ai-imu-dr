@@ -12,8 +12,8 @@ class InitProcessCovNet(torch.nn.Module):
         def __init__(self):
             super(InitProcessCovNet, self).__init__()
 
-            self.beta_process = 3*torch.ones(2).double()
-            self.beta_initialization = 3*torch.ones(2).double()
+            self.beta_process = 3*torch.ones(3).double()
+            self.beta_initialization = 3*torch.ones(3).double()
 
             self.factor_initial_covariance = torch.nn.Linear(1, 6, bias=False).double()
             """parameters for initializing covariance"""
@@ -41,7 +41,7 @@ class InitProcessCovNet(torch.nn.Module):
 class MesNet(torch.nn.Module):
         def __init__(self):
             super(MesNet, self).__init__()
-            self.beta_measurement = 3*torch.ones(2).double()
+            self.beta_measurement = 3*torch.ones(3).double()
             self.tanh = torch.nn.Tanh()
 
             self.cov_net = torch.nn.Sequential(torch.nn.Conv1d(6, 32, 5),
@@ -54,7 +54,7 @@ class MesNet(torch.nn.Module):
                        torch.nn.Dropout(p=0.5),
                        ).double()
             "CNN for measurement covariance"
-            self.cov_lin = torch.nn.Sequential(torch.nn.Linear(32, 2),
+            self.cov_lin = torch.nn.Sequential(torch.nn.Linear(32, 3),
                                               torch.nn.Tanh(),
                                               ).double()
             self.cov_lin[0].bias.data[:] /= 100
@@ -64,6 +64,8 @@ class MesNet(torch.nn.Module):
             y_cov = self.cov_net(u).transpose(0, 2).squeeze()
             z_cov = self.cov_lin(y_cov)
             z_cov_net = self.beta_measurement.unsqueeze(0)*z_cov
+            # print('iekf.cov0_measurement.unsqueeze(0)', iekf.cov0_measurement.unsqueeze(0).shape)
+            # print('(10**z_cov_net)', (10**z_cov_net))
             measurements_covs = (iekf.cov0_measurement.unsqueeze(0) * (10**z_cov_net))
             return measurements_covs
 
@@ -107,7 +109,7 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
                                            self.cov_Rot_c_i, self.cov_Rot_c_i, self.cov_Rot_c_i,
                                            self.cov_t_c_i, self.cov_t_c_i, self.cov_t_c_i])
                             ).double()
-        self.cov0_measurement = torch.Tensor([self.cov_lat, self.cov_up]).double()
+        self.cov0_measurement = torch.Tensor([self.cov_lat, self.cov_up, self.acc]).double()
 
     def run(self, t, u,  measurements_covs, v_mes, p_mes, N, ang0):
 
@@ -207,35 +209,152 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
         P_new = Phi.mm(P + G.mm(Q).mm(G.t())).mm(Phi.t())
         return P_new
 
+    # def custom_jacobian(self, Rot_prev, v_prev, p_prev, b_omega_prev, b_acc_prev, Rot_c_i_prev, t_c_i_prev, omega_n, a_n):
+    #     # Cross product with torch.cross
+    #     b_vector = (Rot_prev.t() @ v_prev) + torch.cross(omega_n - b_omega_prev, t_c_i_prev)
+    #     vee = (omega_n - b_omega_prev).view(3)  # Ensure 1D tensor
+    #     pee = t_c_i_prev.view(3)  # Ensure 1D tensor
+
+    #     M1 = torch.tensor([[0, 1, 0]], dtype=torch.double, requires_grad=False)
+    #     M2 = torch.tensor([[1, 0, 0]], dtype=torch.double, requires_grad=False)
+    #     M3 = torch.tensor([[0, 0, 1]], dtype=torch.double, requires_grad=False)
+
+    #     # Outer product with torch.ger
+    #     omega_p = torch.cross(vee, pee)
+    #     alpha1 = (a_n - b_acc_prev + torch.cross(vee, omega_p)).view(3)
+    #     alpha2 = (Rot_prev.t() @ v_prev).view(3) + torch.cross(omega_n - b_omega_prev, pee)
+    #     alpha3 = vee.view(3)
+
+    #     a_car = Rot_c_i_prev.t() @ alpha1
+    #     v_c = Rot_c_i_prev.t() @ alpha2
+    #     omega_car = Rot_c_i_prev.t() @ alpha3
+
+    #     # Old observation terms (2 rows)
+    #     term_1_7_old = torch.zeros(3, 3, dtype=torch.double)
+    #     term_2_7_old = Rot_c_i_prev.t() @ Rot_prev.t()
+    #     term_4_7_old = Rot_c_i_prev.t() @ self.skew(pee)
+    #     term_6_7_old = Rot_c_i_prev.t() @ self.skew(b_vector)
+    #     term_7_7_old = Rot_c_i_prev.t() @ self.skew(vee)
+    #     J_old = torch.cat([
+    #         term_1_7_old, term_2_7_old, term_1_7_old, term_4_7_old,
+    #         term_1_7_old, term_6_7_old, term_7_7_old
+    #     ], dim=1)[1:3, :]
+
+    #     # New observation terms (1 row)
+    #     term_4_7_new = M1 @ Rot_c_i_prev.t() @ (
+    #         - torch.ger(vee, pee) - 
+    #         torch.dot(omega_n - b_omega_prev, pee) * self.Id3 + 
+    #         2 * torch.ger(pee, vee)
+    #     )
+    #     term_4_7_new += M2 @ Rot_c_i_prev.t() @ self.skew(pee) * (-omega_car[2])
+    #     term_4_7_new += (-M3 @ Rot_c_i_prev.t()) * (-v_c[0])
+
+    #     term_6_7_new = M1 @ Rot_c_i_prev.t() @ self.skew(alpha1)
+    #     term_6_7_new -= torch.tensor([1., 0, 0], dtype=torch.double, requires_grad=False) @ Rot_c_i_prev.t() @ self.skew(alpha2) * omega_car[2]
+    #     term_6_7_new -= v_c[0] * (M3 @ Rot_c_i_prev.t() @ self.skew(alpha3))
+
+    #     term_7_7_new = M1 @ Rot_c_i_prev.t() @ (
+    #         torch.ger(omega_n - b_omega_prev, omega_n - b_omega_prev) - 
+    #         torch.dot(omega_n - b_omega_prev, omega_n - b_omega_prev) * self.Id3
+    #     )
+
+    #     J_new = torch.cat([
+    #         torch.zeros(1, 3, dtype=torch.double),
+    #         -M2 @ (Rot_c_i_prev.t() @ Rot_prev.t()) * omega_car[2],
+    #         torch.zeros(1, 3, dtype=torch.double),
+    #         term_4_7_new,   
+    #         -M1 @ Rot_c_i_prev.t(),
+    #         term_6_7_new,
+    #         term_7_7_new
+    #     ], dim=1)
+
+    #     obs_new = a_car[1] - v_c[0] * omega_car[2]
+    #     return torch.cat([J_old, J_new], dim=0), obs_new
+    def custom_jacobian(self, Rot_prev, v_prev, p_prev, b_omega_prev, b_acc_prev, Rot_c_i_prev, t_c_i_prev, omega_n, a_n):
+        # Cross product with torch.cross
+        b_vector = (Rot_prev.t() @ v_prev) + torch.cross(omega_n - b_omega_prev, t_c_i_prev)
+        vee = (omega_n - b_omega_prev).view(3)
+        pee = t_c_i_prev.view(3)
+
+        # Constant matrices (no grad)
+        M1 = torch.tensor([[0, 1, 0]], dtype=torch.double, requires_grad=False)
+        M2 = torch.tensor([[1, 0, 0]], dtype=torch.double, requires_grad=False)
+        M3 = torch.tensor([[0, 0, 1]], dtype=torch.double, requires_grad=False)
+
+        # Outer product with torch.ger
+        omega_p = torch.cross(vee, pee)
+        alpha1 = (a_n - b_acc_prev + torch.cross(vee, omega_p)).view(3)
+        alpha2 = (Rot_prev.t() @ v_prev).view(3) + torch.cross(omega_n - b_omega_prev, pee)
+        alpha3 = vee.view(3)
+
+        a_car = Rot_c_i_prev.t() @ alpha1
+        v_c = Rot_c_i_prev.t() @ alpha2
+        omega_car = Rot_c_i_prev.t() @ alpha3
+
+        # Old observation terms (2 rows)
+        term_1_7_old = torch.zeros(3, 3, dtype=torch.double)
+        term_2_7_old = Rot_c_i_prev.t() @ Rot_prev.t()
+        term_4_7_old = Rot_c_i_prev.t() @ self.skew(pee)
+        term_6_7_old = Rot_c_i_prev.t() @ self.skew(b_vector)
+        term_7_7_old = Rot_c_i_prev.t() @ self.skew(vee)
+        J_old = torch.cat([
+            term_1_7_old, term_2_7_old, term_1_7_old, term_4_7_old,
+            term_1_7_old, term_6_7_old, term_7_7_old
+        ], dim=1)[1:3, :]
+
+        # New observation terms (1 row) - no inplace ops
+        term_part1 = M1 @ Rot_c_i_prev.t() @ (
+            - torch.ger(vee, pee) - 
+            torch.dot(omega_n - b_omega_prev, pee) * self.Id3 + 
+            2 * torch.ger(pee, vee)
+        )
+        term_part2 = M2 @ Rot_c_i_prev.t() @ self.skew(pee) * (-omega_car[2])
+        term_part3 = (-M3 @ Rot_c_i_prev.t()) * (-v_c[0])
+        term_4_7_new = term_part1 + term_part2 + term_part3
+
+        term_6_part1 = M1 @ Rot_c_i_prev.t() @ self.skew(alpha1)
+        term_6_part2 = (torch.tensor([1., 0, 0], dtype=torch.double, requires_grad=False) 
+                        @ Rot_c_i_prev.t() @ self.skew(alpha2)) * omega_car[2]
+        term_6_part3 = v_c[0] * (M3 @ Rot_c_i_prev.t() @ self.skew(alpha3))
+        term_6_7_new = term_6_part1 - term_6_part2 - term_6_part3
+
+        term_7_7_new = M1 @ Rot_c_i_prev.t() @ (
+            torch.ger(omega_n - b_omega_prev, omega_n - b_omega_prev) - 
+            torch.dot(omega_n - b_omega_prev, omega_n - b_omega_prev) * self.Id3
+        )
+
+        J_new = torch.cat([
+            torch.zeros(1, 3, dtype=torch.double),
+            -M2 @ (Rot_c_i_prev.t() @ Rot_prev.t()) * omega_car[2],
+            torch.zeros(1, 3, dtype=torch.double),
+            term_4_7_new,
+            -M1 @ Rot_c_i_prev.t(),
+            term_6_7_new,
+            term_7_7_new
+        ], dim=1)
+
+        obs_new = a_car[1] - v_c[0] * omega_car[2]
+        return torch.cat([J_old, J_new], dim=0).detach(), obs_new.detach()
+
     def update(self, Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, u, i, measurement_cov):
-        Omega = self.skew(u[:3] - b_omega)  # skew of angular velocity
-        # orientation of body frame
+        Omega = self.skew(u[:3] - b_omega)
         Rot_body = Rot.mm(Rot_c_i)
-        # velocity in imu frame
         v_imu = Rot.t().mv(v)
-        # velocity in body frame in the vehicle axis
         v_body = Rot_c_i.t().mv(v_imu + Omega.mv(t_c_i))
-               
-        # Jacobian in car frame
-        # matrix B in the paper
-        H_v_imu = Rot_c_i.t().mm(self.skew(v_imu + Omega.mv(t_c_i)))
-        # Jacobian matrix for omega-bias
-        H_t_c_i = Rot_c_i.t().mm(-self.skew(t_c_i))
-        # matrix C
-        H_i_bias = Rot_c_i.t().mm(-Omega)
 
-        H = P.new_zeros(2, self.P_dim)
-        H[:, 3:6] = Rot_body.t()[1:]
-        H[:, 15:18] = H_v_imu[1:]
-        H[:, 9:12] = H_t_c_i[1:]
-        H[:, 18:21] = H_i_bias[1:]
-        r = - v_body[1:]
-        R = torch.diag(measurement_cov)
+        H, a_car_y = self.custom_jacobian(
+            Rot, v, p, b_omega, b_acc, 
+            Rot_c_i, t_c_i, 
+            u[:3].detach(), u[3:6].detach()
+        )
+        r = torch.cat((-v_body[1:], -a_car_y.view(1)))
 
-        Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up = \
-            self.state_and_cov_update(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, H, r, R)
-        return Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up
+        R = torch.diag(measurement_cov)  # Use actual measurement covariance
 
+        return self.state_and_cov_update(
+            Rot, v, p, b_omega, b_acc, 
+            Rot_c_i, t_c_i, P, H, r, R
+        )
 
     @staticmethod
     def state_and_cov_update(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, H, r, R):
