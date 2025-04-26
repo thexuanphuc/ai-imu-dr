@@ -74,8 +74,8 @@ class NUMPYIEKF:
         """Zero lateral velocity covariance"""
         cov_up = 300
         """Zero lateral velocity covariance"""
-        acc = 2.8 # acc cov
-
+        acc = 0.02 # acc cov
+        """zero acceleration on centifugal direction covariance"""
         cov_Rot0 = 1e-3
         """initial pitch and roll covariance"""
         cov_b_omega0 = 6e-3
@@ -219,9 +219,9 @@ class NUMPYIEKF:
         pee = np.copy(p_c)
 
 
-        M1 = np.array([0, 1, 0]).reshape(1, 3)
-        M2 = np.array([1, 0, 0]).reshape(1, 3)
-        M3 = np.array([0, 0, 1]).reshape(1, 3)
+        M1 = np.array([0, 1.0, 0]).reshape(1, 3)
+        M2 = np.array([1.0, 0, 0]).reshape(1, 3)
+        M3 = np.array([0, 0, 1.0]).reshape(1, 3)
 
         omega_p = np.cross(vee, p_c)
         alpha1 = (a_n - b_a + np.cross(vee, omega_p)).reshape(3,)
@@ -288,8 +288,8 @@ class NUMPYIEKF:
         # H[:, 9:12] = H_t_c_i[1:]
         # H[:, 18:21] = H_i_bias[1:]
 
-        # R = np.diag(measurement_cov)
-        R = np.eye(3)
+        R = np.diag(measurement_cov)
+        # R = np.eye(3)
         H, a_car_y = self.custom_jacobian(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, u[:3], u[3:])
         r = np.concatenate((-v_body[1:], -a_car_y), axis=0)
 

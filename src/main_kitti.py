@@ -50,8 +50,9 @@ class KITTIParameters(IEKF.Parameters):
     cov_b_acc0 = 1e-3
     cov_Rot_c_i0 = 1e-5
     cov_t_c_i0 = 1e-2
-    cov_lat = 1
-    cov_up = 10
+    # cov_lat = 1
+    # cov_up = 10
+    # acc = 0.02 # acc cov
 
     def __init__(self, **kwargs):
         super(KITTIParameters, self).__init__(**kwargs)
@@ -125,9 +126,9 @@ class KITTIDataset(BaseDataset):
         self.datasets_train_filter["2011_09_30_drive_0020_extract"] = [0, 11000]
         self.datasets_train_filter["2011_09_30_drive_0027_extract"] = [0, 11000]
         self.datasets_train_filter["2011_09_30_drive_0033_extract"] = [0, 15900]
-        self.datasets_train_filter["2011_10_03_drive_0027_extract"] = [0, 18000]
-        self.datasets_train_filter["2011_10_03_drive_0034_extract"] = [0, 31000]
-        self.datasets_train_filter["2011_09_30_drive_0034_extract"] = [0, 11000]
+        self.datasets_train_filter["2011_10_03_drive_0027_extract"] = [0, 45400]
+        # self.datasets_train_filter["2011_10_03_drive_0034_extract"] = [0, 31000]
+        # self.datasets_train_filter["2011_09_30_drive_0034_extract"] = [0, 11000]
 
         for dataset_fake in KITTIDataset.datasets_fake:
             if dataset_fake in self.datasets:
@@ -462,7 +463,7 @@ class KITTIArgs():
         path_results = "../results"
         path_temp = "../temp"
 
-        epochs = 60
+        epochs = 100
         seq_dim = 6000
 
         # training, cross-validation and test dataset

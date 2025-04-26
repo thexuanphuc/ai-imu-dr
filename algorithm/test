@@ -1,0 +1,43 @@
+= New Additional Pseudo-Measurement
+
+== The Acceleration of Car on Lateral Axis Should be Equal to Centrifugal Acceleration
+
+\
+
+The new additional pseudo-measurement:
+
+$ h(X) = a_y^("car") - v^("for") \cdot omega_z^("car") $
+
+== For $ a_y^("car") $
+
+a^("car") is the acceleration of the car's body with respect to the global O but aligned along the car frame axis.
+
+| $a_{"B/O"}=$  | $a_{"A/O"}$ | $dot{"omega"}  r_{"AB"}$ | $omega times omega times r_{"AB"}$ |
+|--------|-----------|-----------|-----------|
+| $a^{"car"}=$ | $R_n^{"carT"}(a_n)$ | $R_n^{"carT"}( dot{"omega_{"n"}"} times p_n^c)$ | $R_n^{"carT"} (omega_{"n"}times(omega_{"n"}times p_n^c))$ |
+| Explanation | Acceleration transformation from IMU to car frame. | Tangent acceleration of car around IMU (as we understand, $p_n^c$ was defined in the car's frame, hence this term will be in the car's frame) | Coriolis term (as we understand, $p_n^c$ was defined in the car's frame, hence this term will be in the car's frame) |
+
+\
+
+For now, let's assume $dot{"omega_{"IMU"}"} times p_n^c = 0$, meaning the car doesn’t rotate too fast (of course when the car does drift, otherwise we need to add a vector of angular acceleration as an estimated state).
+
+$ \Leftrightarrow a^{"car"} = R_n^{"carT"} ( a_n + omega_{"n"}times(omega_{"n"}times p_n^c)) $
+
+$ a_y^{"car"} = (0,1,0) \cdot a^{"car"} $
+
+== For $omega_z^{"car"}$
+
++ Because the car and IMU are fixed, they are rotating together.
+
+$omega^{"car \& imu"} = omega_n = omega_n^{"IMU"} - \beta_n^omega$
+
++ However, since we have misalignment of axes between the car and IMU, we need to transform and find the yaw angular velocity in the car frame ($omega_z$).
+
+$omega^{"car"} = (0,0,1)R_n^{"carT"} (omega_n^{"IMU"} - \beta_n^omega)$
+
+== For $v^{"for"}$
+
+$ v^{"for"} = (1,0,0) \cdot v^{"car"} $
+
+$ v^{"car"} = R_n^{"carT"} ( R_n^{"IMU T"} v_n^{"IMU"} + omega_n^c times p_n^c)$
+

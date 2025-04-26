@@ -341,7 +341,7 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
         Rot_body = Rot.mm(Rot_c_i)
         v_imu = Rot.t().mv(v)
         v_body = Rot_c_i.t().mv(v_imu + Omega.mv(t_c_i))
-
+        # def custom_jacobian(self, Rot_prev, v_prev, p_prev, b_omega_prev, b_acc_prev, Rot_c_i_prev, t_c_i_prev, omega_n, a_n):
         H, a_car_y = self.custom_jacobian(
             Rot, v, p, b_omega, b_acc, 
             Rot_c_i, t_c_i, 
